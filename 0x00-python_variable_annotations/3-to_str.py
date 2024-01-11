@@ -4,7 +4,7 @@
 """
 Module: 3-to_str
 
-This module provides a function for converting a float to its string representation.
+This module provides a function for converting a float to str
 """
 
 
