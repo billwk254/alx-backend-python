@@ -1,27 +1,46 @@
 #!/usr/bin/env python3
-"""Unit tests for client.GithubOrgClient class."""
+"""Integration tests for client.GithubOrgClient class."""
 import unittest
-from parameterized import parameterized
+from unittest.mock import patch
+from parameterized import parameterized_class
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 from client import GithubOrgClient
 
 
-class TestGithubOrgClient(unittest.TestCase):
-    """Test case for GithubOrgClient class."""
+@parameterized_class(("org_payload", "repos_payload", "expected_repos", "apache2_repos"),
+                     [(org_payload, repos_payload, expected_repos, apache2_repos)])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """Integration test case for GithubOrgClient class."""
 
-    @parameterized.expand([
-        ({"license": {"key": "my_license"}}, "my_license", True),
-        ({"license": {"key": "other_license"}}, "my_license", False)
-    ])
-    def test_has_license(self, repo, license_key, expected_result):
-        """Test has_license method of GithubOrgClient."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up the test class."""
+        # Start a patcher for requests.get
+        cls.get_patcher = patch('client.requests.get')
+
+        # Mock requests.get to return example payloads
+        cls.mock_get = cls.get_patcher.start()
+        cls.mock_get.side_effect = [
+            Mock(json=lambda: cls.org_payload),
+            Mock(json=lambda: cls.repos_payload)
+        ]
+
+    @classmethod
+    def tearDownClass(cls):
+        """Tear down the test class."""
+        # Stop the patcher
+        cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """Test public_repos method of GithubOrgClient."""
         # Instantiate the GithubOrgClient
         test_client = GithubOrgClient("testorg")
 
-        # Call the has_license method
-        result = test_client.has_license(repo, license_key)
+        # Call the public_repos method
+        result = test_client.public_repos(license="Apache-2.0")
 
         # Assert that the result is as expected
-        self.assertEqual(result, expected_result)
+        self.assertEqual(result, self.apache2_repos)
 
 
 if __name__ == '__main__':
