@@ -1,28 +1,39 @@
 #!/usr/bin/env python3
-"""Unit tests for utils.get_json function."""
+"""Unit tests for utils.memoize decorator."""
 import unittest
-from unittest.mock import patch, Mock
-from parameterized import parameterized
-from utils import get_json
+from unittest.mock import patch
+from utils import memoize
 
 
-class TestGetJson(unittest.TestCase):
-    """Test case for get_json function."""
+class TestMemoize(unittest.TestCase):
+    """Test case for memoize decorator."""
 
-    @parameterized.expand([
-        ("http://example.com", {"payload": True}),
-        ("http://holberton.io", {"payload": False})
-    ])
-    @patch('utils.requests.get')
-    def test_get_json(self, test_url, test_payload, mock_get):
-        """Test get_json function."""
-        mock_get.return_value = Mock()
-        mock_get.return_value.json.return_value = test_payload
+    class TestClass:
+        """Test class for memoize decorator."""
+        def a_method(self):
+            """A method returning 42."""
+            return 42
 
-        response = get_json(test_url)
+        @memoize
+        def a_property(self):
+            """A memoized property."""
+            return self.a_method()
 
-        mock_get.assert_called_once_with(test_url)
-        self.assertEqual(response, test_payload)
+    @patch.object(TestClass, 'a_method')
+    def test_memoize(self, mock_method):
+        """Test memoize decorator."""
+        test_instance = self.TestClass()
+
+        # Call a_property twice
+        result1 = test_instance.a_property
+        result2 = test_instance.a_property
+
+        # Assert that a_method is only called once
+        mock_method.assert_called_once()
+
+        # Assert that the results are correct
+        self.assertEqual(result1, 42)
+        self.assertEqual(result2, 42)
 
 
 if __name__ == '__main__':
