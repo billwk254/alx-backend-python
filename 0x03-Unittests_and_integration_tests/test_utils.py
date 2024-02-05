@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
-"""Unit tests for utils.access_nested_map function."""
+"""Unit tests for utils.get_json function."""
 import unittest
+from unittest.mock import patch, Mock
 from parameterized import parameterized
-from utils import access_nested_map
+from utils import get_json
 
 
-class TestAccessNestedMap(unittest.TestCase):
-    """Test case for access_nested_map function."""
+class TestGetJson(unittest.TestCase):
+    """Test case for get_json function."""
 
     @parameterized.expand([
-        ({}, ("a",), "a"),
-        ({"a": 1}, ("a", "b"), "b")
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False})
     ])
-    def test_access_nested_map_exception(self, nested_map, path, expected_error_msg):
-        """Test access_nested_map function for KeyError exceptions."""
-        with self.assertRaises(KeyError) as context:
-            access_nested_map(nested_map, path)
-        self.assertEqual(str(context.exception), f"'{expected_error_msg}'")
+    @patch('utils.requests.get')
+    def test_get_json(self, test_url, test_payload, mock_get):
+        """Test get_json function."""
+        mock_get.return_value = Mock()
+        mock_get.return_value.json.return_value = test_payload
+
+        response = get_json(test_url)
+
+        mock_get.assert_called_once_with(test_url)
+        self.assertEqual(response, test_payload)
 
 
 if __name__ == '__main__':
